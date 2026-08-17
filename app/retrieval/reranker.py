@@ -1,4 +1,4 @@
-from sentence_transformers import cross_encoder, CrossEncoder
+from sentence_transformers import CrossEncoder
 
 
 class Reranker:

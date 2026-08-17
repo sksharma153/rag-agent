@@ -14,8 +14,9 @@ retriever = HybridRetriever(
 )
 
 results = retriever.retrieve(
-    question="How many years of experience?",
+    question="What services does Sandeep use on Google Cloud Platform?",
     tenant_id="tenant_001",
+    document_id="2a67845f-9e7b-4010-8fb5-11288e61a12c",
     k=5
 )
 

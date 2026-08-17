@@ -6,7 +6,7 @@ from app.embeddings.local_embedding import LocalEmbedding
 embedding_service = LocalEmbedding()
 
 client = chromadb.PersistentClient(
-    path="chroma_db"
+    path="../chroma_db"
 )
 
 collection = client.get_collection(
