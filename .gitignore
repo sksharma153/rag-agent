@@ -1,4 +1,40 @@
+# Python virtual environment
 venv/
+.venv/
+
+# Python cache
 __pycache__/
+*.py[cod]
+
+# Environment / secrets
 .env
+.env.*
+!.env.example
+
+# macOS
 .DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Local databases / vector stores
+chroma_db/
+
+# Local application data
+data/
+
+# Uploaded/generated documents
+documents/
+
+# Test artifacts / logs
+*.log
+
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS / editor temp files
+*.swp
+*.swo
