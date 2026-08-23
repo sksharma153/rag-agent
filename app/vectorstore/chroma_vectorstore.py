@@ -1,15 +1,21 @@
 import chromadb
-
+from pathlib import Path
 from app.model.chunk import DocumentChunk
 from app.model.retrieved_chunk import RetrievedChunk
 from app.vectorstore.base_vectorstore import BaseVectorStore
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 class ChromeVectorStore(BaseVectorStore):
     def __init__(
             self,
-            path: str = "chroma_db",
+            path: str | None = None,
             collection_name: str = "documents"
     ):
+        if path is None:
+            path = str(
+                PROJECT_ROOT/"chroma_db"
+            )
         self.client = chromadb.PersistentClient(path=path)
 
         self.collection = self.client.get_or_create_collection(
@@ -17,13 +23,28 @@ class ChromeVectorStore(BaseVectorStore):
             metadata={"hnsw:space": "cosine"},
         )
 
+        """
+        self.child_collection = (
+            self.client.get_or_create_collection(
+                name="document_children",
+                metadata={"hnsw:space": "cosine"},
+            )
+        )
+
+        self.parent_collection = (
+            self.client.get_or_create_collection(
+                name="document_parents",
+            )
+        )"""
+
     def add_chunks(self, chunks: list[DocumentChunk]):
-        self.collection.add(
+        self.child_collection.add(
             ids=[chunk.id for chunk in chunks],
-            documents=[chunk.text for chunk in chunks],
+            documents=[chunk.metadata.get("search_text", chunk.text) for chunk in chunks],
             embeddings=[chunk.embedding for chunk in chunks],
             metadatas=[chunk.metadata for chunk in chunks]
         )
+        self.add_children(chunks)
 
     def similarity_search(
             self,
@@ -63,7 +84,7 @@ class ChromeVectorStore(BaseVectorStore):
         if where:
             query["where"] = where
 
-        results = self.collection.query(**query)
+        results = self.child_collection.query(**query)
 
         retrieved = []
 
@@ -81,7 +102,7 @@ class ChromeVectorStore(BaseVectorStore):
 
     def list_documents(self):
 
-        results = self.collection.get(
+        results = self.child_collection.get(
             include=["metadatas"]
         )
 
@@ -104,18 +125,84 @@ class ChromeVectorStore(BaseVectorStore):
         return list(documents.values())
 
     def delete_documents(self, document_ids):
-
-        results = self.collection.get(
+        delete_count = 0
+        child_results = self.child_collection.get(
             where={
-                "document_id": document_ids
+                "document_id": {
+                    "$in": document_ids
+                }
             }
         )
 
-        ids = results["ids"]
+        child_ids = child_results["ids"]
 
-        if ids:
-            self.collection.delete(
-                ids=ids,
+        if child_ids:
+            self.child_collection.delete(
+                ids=child_ids,
+            )
+            delete_count += len(child_ids)
+
+        parent_results = self.parent_collection.get(
+            where={
+                "document_id": {
+                    "$in": document_ids
+                }
+            }
+        )
+        parent_ids = parent_results["ids"]
+        if parent_ids:
+            self.parent_collection.delete(
+                ids=parent_ids,
             )
 
-        return len(ids)
+        return delete_count
+
+    def add_parents(self, chunks):
+        self.parent_collection.add(
+            ids=[chunk.id for chunk in chunks],
+            documents=[chunk.text for chunk in chunks],
+            metadatas=[
+                chunk.metadata for chunk in chunks
+            ]
+        )
+
+    def get_parents(self, parent_id: str):
+        result = self.parent_collection.get(
+            ids=[parent_id]
+        )
+
+        if not result["ids"]:
+            return None
+
+        return RetrievedChunk(
+            id=result["ids"][0],
+            text=result["documents"][0],
+            score=1.0,
+            metadata=result["metadatas"][0]
+        )
+
+    def add_children(
+            self,
+            chunks: list[DocumentChunk],
+    ):
+        if not chunks:
+            return
+
+        self.child_collection.add(
+            ids=[
+                chunk.id
+                for chunk in chunks
+            ],
+            documents=[
+                chunk.text
+                for chunk in chunks
+            ],
+            embeddings=[
+                chunk.embedding
+                for chunk in chunks
+            ],
+            metadatas=[
+                chunk.metadata
+                for chunk in chunks
+            ],
+        )

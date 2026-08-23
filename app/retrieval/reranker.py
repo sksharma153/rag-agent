@@ -22,21 +22,52 @@ class Reranker:
         if not results:
             return []
 
-        pairs = [
-            (
-                question,
-                result["chunk"].text
-            )
-            for result in results
-        ]
+        pairs = []
+        for result in results:
+            chunk = result["chunk"]
+            parent = result.get("parent")
+            heading = ""
+
+            if chunk.metadata:
+                heading = chunk.metadata.get("heading", "")
+
+            if parent:
+                parent_text = parent.text[:4000]
+                candidate_text = (
+                    f"SECTION:\n"
+                    f"{heading}\n\n"
+                    f"PARENT CONTEXT:\n"
+                    f"{parent_text}\n\n"
+                    f"CHILD CONTENT:\n"
+                    f"{chunk.text}"
+                )
+            else:
+                candidate_text = (
+                    f"SECTION:\n"
+                    f"{heading}\n\n"
+                    f"CHILD CONTENT:\n"
+                    f"{chunk.text}"
+                )
+
+            pairs.append((
+                question,candidate_text
+            ))
 
         scores = self.model.predict(pairs)
 
         reranked = []
 
         for result, score in zip(results, scores):
+            hybrid_score = float(
+                result.get("hybrid_score", 0.0)
+            )
+
+            final_score = (
+                float(score) + 1.0 * hybrid_score
+            )
             updated_result = result.copy()
-            updated_result["rerank_score"] = float(score)
+            updated_result["cross_encoder_score"] = float(score)
+            updated_result["rerank_score"] = final_score
             reranked.append(updated_result)
 
         reranked.sort(

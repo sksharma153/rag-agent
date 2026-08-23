@@ -14,7 +14,7 @@ class DoclingParser:
         :param file_path:
         :return:
         """
-
+        print("FilePath: {}".format(file_path))
         file = Path(file_path)
         if not file.is_file():
             raise FileNotFoundError(f"File {file_path} not found")

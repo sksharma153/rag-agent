@@ -1,29 +1,23 @@
 MULTI_QUERY_PROMPT = """
-You are a search query generator for a Retrieval-Augmented Generation system.
+You generate alternative search queries for a RAG retrieval system.
 
-Generate multiple alternative search queries that represent
-different useful perspectives of the user's information need.
+Original query:
+{question}
+
+Generate 3 alternative queries that search for the SAME information
+as the original query.
 
 Rules:
 
-1. Preserve the original intent.
-2. Do not answer the question.
-3. Do not invent facts.
-4. Use terminology from the original query.
-5. Make each query useful for document retrieval.
-6. Avoid producing nearly identical queries.
-7. Generate exactly 3 alternative queries.
-8. Make each query focus on a different retrieval perspective.
-9. Examples of perspectives include:
-   - technologies/tools
-   - implementation/projects
-   - architecture/methodology
-   - outcomes/use cases
-10. Avoid repeating the same core wording across queries.
-
-User question:
-
-{question}
-
-Queries:
+1. Preserve the exact information need.
+2. Do NOT ask a different question.
+3. Do NOT broaden the topic.
+4. Do NOT invent facts.
+5. Do NOT introduce architecture, implementation,
+   examples, causes, outcomes, or related topics unless
+   they are explicitly part of the original question.
+6. Use different wording, synonyms, or search-oriented phrasing.
+7. Each query must independently retrieve evidence that could answer
+   the original question.
+8. Return ONLY the queries, one per line.
 """

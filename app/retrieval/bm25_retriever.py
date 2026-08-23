@@ -1,14 +1,21 @@
 import os
 import pickle
-
+from pathlib import Path
 from rank_bm25 import BM25Okapi
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 class BM25Retriever:
 
     def __init__(
             self,
-            index_path: str = "data/bm25"
+            index_path: str | None = None,
     ):
+        if index_path is None:
+            index_path = str(
+                PROJECT_ROOT / "data" / "bm25"
+            )
+
         self.index_path = index_path
         self.tenant_indexes = {}
 

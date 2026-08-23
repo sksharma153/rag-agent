@@ -26,3 +26,15 @@ class BaseVectorStore(ABC):
     @abstractmethod
     def delete_documents(self, document_id: str):
         pass
+
+    @abstractmethod
+    def add_parents(self, chunks: list[DocumentChunk]):
+        pass
+
+    @abstractmethod
+    def add_children(self, chunks: list[DocumentChunk]):
+        pass
+
+    @abstractmethod
+    def get_parents(self, parent_id: str ):
+        pass

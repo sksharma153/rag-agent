@@ -28,10 +28,19 @@ class IngestionService:
             "tenant_id": tenant_id,
             "content_hash": content_hash,
         })
+
         chunks = self.chunker.chunk(document)
 
-        for index, chunk in enumerate(chunks):
-            chunk.id = f"{document_id}:{index}"
+        parent_chunks = [
+            chunk for chunk in chunks if chunk.metadata.get("chunk_type") == "parent"
+        ]
+
+        child_chunks = [
+            chunk for chunk in chunks if chunk.metadata.get("chunk_type") == "child"
+        ]
+
+        for index, chunk in enumerate(child_chunks):
+            #chunk.id = f"{document_id}:{index}"
             chunk.metadata.update({
                 'document_id': document_id,
                 'tenant_id': tenant_id,
@@ -40,30 +49,37 @@ class IngestionService:
                 'content_hash': content_hash,
             })
 
-        texts = [chunk.text for chunk in chunks]
+        texts = [chunk.text for chunk in child_chunks]
         embeddings = self.embedding_service.embed_documents(texts)
 
-        for chunk, embedding in zip(chunks, embeddings):
+        for chunk, embedding in zip(child_chunks, embeddings):
             chunk.embedding = embedding
 
         #-------------------------------
         # Adding chunks to ChromaDb
         #-------------------------------
-        self.vectorstore.add_chunks(chunks)
+        #self.vectorstore.add_chunks(chunks)
+
+        if parent_chunks:
+            self.vectorstore.add_parents(parent_chunks)
+        if child_chunks:
+            self.vectorstore.add_children(child_chunks)
 
         #-------------------------------
         # Adding chunks to BM25
         #-------------------------------
-        self.bm25_retriever.add_chunks(
-            tenant_id=tenant_id,
-            chunks=chunks,
-        )
+        if child_chunks:
+            self.bm25_retriever.add_chunks(
+                tenant_id=tenant_id,
+                chunks=child_chunks,
+            )
 
         return {
             "document_id": document_id,
             "tenant_id": tenant_id,
             "filename": document.filename,
             "content_hash": content_hash,
-            "chunks_created": len(chunks),
+            "parent_created": len(parent_chunks),
+            "children_created": len(child_chunks),
             "status": "indexed"
         }

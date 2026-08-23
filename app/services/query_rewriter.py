@@ -13,6 +13,9 @@ class QueryRewriter:
 
         conversation_history = conversation_history or []
 
+        if not conversation_history:
+            return question.strip()
+
         history_text = "\n".join(
             f"{message['role']}: {message['content']}"
             for message in conversation_history
@@ -23,8 +26,7 @@ class QueryRewriter:
             question=question,
         )
 
-        rewritten_query = self.llm.generate(prompt)
-        rewritten_query = rewritten_query.strip()
+        rewritten_query = self.llm.generate(prompt).strip()
 
         if not rewritten_query:
             return question

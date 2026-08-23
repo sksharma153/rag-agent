@@ -17,10 +17,29 @@ class RetrievalService:
     ):
 
         # Get the larger candidate set first
-        candidates = self.hybrid_retriever.retrieve(question, tenant_id, document_id, k=10)
+        candidates = self.hybrid_retriever.retrieve(question, tenant_id, document_id, k=30)
+
+        enriched_candidates = []
+        for candidate in candidates:
+            chunk = candidate["chunk"]
+            parent = None
+            parent_id = None
+            if chunk.metadata:
+                parent_id = chunk.metadata.get("parent_id")
+
+            if parent_id:
+                parent = self.hybrid_retriever.get_parent(parent_id)
+
+            enriched_result = candidate.copy()
+            enriched_result["parent"] = parent
+            enriched_candidates.append(enriched_result)
 
         # Rerank the candidates
-        results = self.reranker.rerank(question, candidates, k=k)
+        results = self.reranker.rerank(
+            question=question,
+            results=enriched_candidates,
+            k=15
+        )
 
         return results
 
@@ -39,7 +58,7 @@ class RetrievalService:
                 question=query,
                 tenant_id=tenant_id,
                 document_id=document_id,
-                k=10
+                k=30
             )
 
             for rank, result in enumerate(results, start=1):
@@ -47,6 +66,16 @@ class RetrievalService:
                 result_copy["query_index"] = index
                 result_copy["multi_query_rank"] = rank
                 all_results.append(result_copy)
+
+            for rank, result in enumerate(results, start=1):
+                chunk = result["chunk"]
+
+                print(
+                    rank,
+                    chunk.id,
+                    result.get("rerank_score")
+                )
+                print(chunk.text[:500])
 
         fused_results = self._fuse_multi_query_results(all_results)
 

@@ -6,10 +6,9 @@ from fastapi.params import Depends
 
 from app.api.chat import bm25_retriever
 from app.api.dependencies import get_current_tenant
-from app.chunking.header_chunker import HeaderChunker
+from app.chunking.parent_child_chunker import ParentChildChunker
 from app.embeddings.local_embedding import LocalEmbedding
 from app.parsers.docling_parser import DoclingParser
-from app.retrieval.bm25_retriever import BM25Retriever
 from app.services.ingestion_service import IngestionService
 from app.vectorstore.chroma_vectorstore import ChromeVectorStore
 
@@ -24,11 +23,10 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 embedding_service = LocalEmbedding()
 vectorstore = ChromeVectorStore()
-bm25_retriever = BM25Retriever()
 
 ingestion_service = IngestionService(
     parser=DoclingParser(),
-    chunker=HeaderChunker(),
+    chunker=ParentChildChunker(),
     embedding_service=embedding_service,
     vectorstore=vectorstore,
     bm25_retriever=bm25_retriever,

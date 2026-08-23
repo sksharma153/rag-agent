@@ -1,0 +1,401 @@
+[
+  {
+    "id": "policy_001",
+    "question": "What is the policy number?",
+    "expected_answer": "The policy number is U152849339.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      3,
+      18,
+      27
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:4",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:111"
+    ]
+  },
+  {
+    "id": "policy_002",
+    "question": "What is the name of the policyholder and life insured?",
+    "expected_answer": "Both the policyholder and the life insured are Sandeep Kumar Sharma.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      3,
+      27
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "policy_003",
+    "question": "What is the policy term and premium paying term?",
+    "expected_answer": "The policy term is 15 years and the premium paying term is 5 years.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      3,
+      27
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:17",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:60"
+    ]
+  },
+  {
+    "id": "policy_004",
+    "question": "What is the date of commencement and maturity date of the policy?",
+    "expected_answer": "The policy commenced on 15 January 2019 and the maturity date is 15 January 2034.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      3
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:6",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:7"
+    ]
+  },
+  {
+    "id": "policy_005",
+    "question": "What is the annualised premium and how often is the premium paid?",
+    "expected_answer": "The annualised premium is Rs. 55,000 excluding taxes, and the mode of premium payment is annual.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      3
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:60",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:56"
+    ]
+  },
+  {
+    "id": "policy_006",
+    "question": "What is the basic sum assured under the policy?",
+    "expected_answer": "The basic sum assured is Rs. 5,50,000.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      3,
+      27
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:7",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:34"
+    ]
+  },
+  {
+    "id": "policy_007",
+    "question": "Who is the nominee and what percentage of the nomination does the nominee have?",
+    "expected_answer": "Mitthoo Prasad is the nominee, with a 100% nomination share.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      3
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:100",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:27"
+    ]
+  },
+  {
+    "id": "policy_008",
+    "question": "How long is the free-look period for this policy?",
+    "expected_answer": "The free-look period is 15 days from receipt of the policy document, or 30 days when the policy was sourced through distance marketing or electronic modes.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      1,
+      18
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:2",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:31"
+    ]
+  },
+  {
+    "id": "policy_009",
+    "question": "What happens if the policyholder returns the policy during the free-look period?",
+    "expected_answer": "The policy terminates and the refund is calculated after applicable deductions described in the policy.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      1
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:30",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:35"
+    ]
+  },
+  {
+    "id": "policy_010",
+    "question": "What is the grace period for premium payment?",
+    "expected_answer": "The policy provides a grace period of 15 days for monthly mode and 30 days for other modes.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      9
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:19",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:35"
+    ]
+  },
+  {
+    "id": "policy_011",
+    "question": "When is partial withdrawal allowed under the policy?",
+    "expected_answer": "Partial withdrawal is allowed after the policy has completed at least five policy anniversaries and while the policy is in force or in Reduced Paid Up status, subject to the policy conditions.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      10
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:32",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:20"
+    ]
+  },
+  {
+    "id": "policy_012",
+    "question": "How many times can partial withdrawal be made in a policy year?",
+    "expected_answer": "Partial withdrawal is allowed a maximum of four times in a policy year.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      11
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:32",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:53"
+    ]
+  },
+  {
+    "id": "policy_013",
+    "question": "What is the minimum age requirement for partial withdrawal?",
+    "expected_answer": "Partial withdrawal is allowed only after the insured attains 18 years of age.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      10
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:32",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:53"
+    ]
+  },
+  {
+    "id": "policy_014",
+    "question": "What happens if the policy is completely withdrawn within the first five years?",
+    "expected_answer": "The proceeds of the discontinued policy are paid after completion of the five-year lock-in period or on the death of the insured, if earlier, subject to the policy provisions.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      30
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:33",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:30"
+    ]
+  },
+  {
+    "id": "policy_015",
+    "question": "What is the minimum top-up premium allowed under the policy?",
+    "expected_answer": "Each top-up premium must not be less than Rs. 5,000, subject to the policy terms.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      9
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:18",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:46"
+    ]
+  },
+  {
+    "id": "policy_016",
+    "question": "How can the policyholder request a fund switch, premium redirection, or top-up?",
+    "expected_answer": "These transactions can be performed through the online account, or by submitting the applicable signed form at a Tata AIA Life branch.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      19
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:39",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:46"
+    ]
+  },
+  {
+    "id": "policy_017",
+    "question": "What information can the policyholder access through the online account?",
+    "expected_answer": "The online account provides access to policy details such as premium due date, NAV, and payment summary; it also supports online ULIP transactions, premium payments, e-statements, and service requests.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      19
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:107",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:27"
+    ]
+  },
+  {
+    "id": "policy_018",
+    "question": "What documents are generally required for a death claim?",
+    "expected_answer": "The policy lists claim forms, a death certificate, medical records, the original policy document, claimant identity and relationship/address proof, and bank details, along with additional documents depending on the circumstances.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      17
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:105",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:23"
+    ]
+  },
+  {
+    "id": "policy_019",
+    "question": "What additional documents are required for an accidental death claim?",
+    "expected_answer": "For accidental death, the policy additionally lists police papers, medical records, and a postmortem report with chemical viscera report where applicable.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      17
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:105",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:23"
+    ]
+  },
+  {
+    "id": "policy_020",
+    "question": "Who bears the investment risk in the policy's investment portfolio?",
+    "expected_answer": "The investment risk in the investment portfolio is borne by the policyholder.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      2,
+      30
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:68",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:41"
+    ]
+  },
+  {
+    "id": "policy_021",
+    "question": "What is the effect of market performance on the fund unit price?",
+    "expected_answer": "The unit price may go up or down based on the market value and performance of the underlying assets, including interest rates and underlying stocks.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      30
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:117",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:69"
+    ]
+  },
+  {
+    "id": "policy_022",
+    "question": "What was the total premium paid and total premium invested in the current policy year shown in the unit statement?",
+    "expected_answer": "The total premium paid was Rs. 55,000 and the total premium invested was Rs. 51,106.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      27
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:114",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:8"
+    ]
+  },
+  {
+    "id": "policy_023",
+    "question": "What were the main premium-related charges shown in the unit statement?",
+    "expected_answer": "The unit statement shows premium allocation charges of Rs. 3,300, service tax on that charge of Rs. 594, mortality charges on the sum assured of Rs. 48.85, service tax on mortality charges of Rs. 8.79, and monthly policy administration charges of Rs. 34.38 plus applicable service tax.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      27
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:29",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:44"
+    ]
+  },
+  {
+    "id": "policy_024",
+    "question": "What is the current death benefit shown in the unit statement?",
+    "expected_answer": "The current death benefit for the regular/single premium account as at 15 January 2019 is Rs. 5,50,000, with no top-up death benefit shown, making the total death benefit Rs. 5,50,000.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      27
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:116",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:23"
+    ]
+  },
+  {
+    "id": "policy_025",
+    "question": "Compare the policy's premium paying term, policy term, and maturity date.",
+    "expected_answer": "The policy has a 5-year premium paying term within a 15-year policy term, with maturity scheduled for 15 January 2034.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      3
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:10",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:8"
+    ]
+  },
+  {
+    "id": "policy_026",
+    "question": "What are the main differences between partial withdrawal and complete withdrawal under the policy?",
+    "expected_answer": "Partial withdrawal is a permitted withdrawal from fund value subject to conditions, while complete withdrawal terminates the policy and is subject to lock-in and discontinuance provisions.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      10,
+      11,
+      12,
+      30
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:33",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:50"
+    ]
+  },
+  {
+    "id": "policy_027",
+    "question": "If the policyholder wants to change the premium payment mode, what process is described in the FAQ?",
+    "expected_answer": "The policyholder should submit a duly signed mode-change form at a Tata AIA Life branch at least 10 days before the due date, subject to the modes allowed for the policy.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      18
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:17",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:46"
+    ]
+  },
+  {
+    "id": "policy_028",
+    "question": "What policy changes can the policyholder request using the applicable change form?",
+    "expected_answer": "The FAQ lists name, address/contact number, ownership, signature, nominee, and basic plan changes, subject to submitting the relevant signed form and supporting documents.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      18
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:107",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:27"
+    ]
+  },
+  {
+    "id": "policy_029",
+    "question": "What is the policy's maturity benefit and where is the maturity benefit defined?",
+    "expected_answer": "The policy schedule states that the maturity benefit is payable as per Clause 1 of Part C.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      3
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:10",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:7"
+    ]
+  },
+  {
+    "id": "policy_030",
+    "question": "What is the suicide exclusion in the policy?",
+    "expected_answer": "If death is due to suicide within 12 months from the Date of Commencement of Policy or Date of Revival of the Policy, the nominee or legal heir is entitled to the Total Fund Value available on the date of death. Any charges recovered after the date of death are paid back to the nominee or beneficiary along with the death benefit.",
+    "document_id": "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02",
+    "source_pages": [
+      12,
+      15,
+      16
+    ],
+    "relevant_chunk_ids": [
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:73",
+      "b06a4b5e-ad90-4ed5-b297-28dd28ec9a02:72"
+    ]
+  }
+]

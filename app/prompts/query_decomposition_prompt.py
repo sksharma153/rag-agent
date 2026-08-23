@@ -1,29 +1,67 @@
 QUERY_DECOMPOSITION_PROMPT = """
-You are a query decomposition system for a Retrieval-Augmented Generation application.
+You are a query decomposition component for a RAG system.
 
-Your task is to determine whether the user's question contains
-multiple DISTINCT information needs.
+Determine whether the question contains multiple independent
+information needs that require separate retrieval.
 
-IMPORTANT:
+Conversation history:
+{conversation_history}
 
-- Do NOT rewrite a simple question into multiple variations.
-- Do NOT generate alternative phrasings of the same question.
-- Only decompose when the question requires multiple separate pieces
-  of information to answer completely.
-- If the question can be answered as one focused information need,
-  return the original question as ONE item.
+Question:
+{question}
+
+Rules:
+
+1. Decompose ONLY when the question genuinely contains multiple
+   independent information needs.
+2. A simple factual lookup must NOT be decomposed.
+3. A simple entity lookup must NOT be decomposed.
+4. A numerical lookup must NOT be decomposed.
+5. A question asking for multiple fields from the same document
+   section should normally remain ONE question.
+6. Do NOT change the user's information need.
+7. Do NOT turn a question into definitions unless the user
+   explicitly asks for definitions.
+8. Each sub-question must preserve the original intent.
+9. Maximum 4 sub-questions.
+10. Return ONLY the questions, one per line.
 
 Examples:
 
-Simple question:
-"What technologies does Sandeep know?"
+Question:
+What is the policy number?
 
 Return:
-What technologies does Sandeep know?
+What is the policy number?
 
-Complex question:
-"Compare Sandeep's Kafka and Spark experience and explain
-which one was used more for real-time processing."
+---
+
+Question:
+Who is the nominee?
+
+Return:
+Who is the nominee?
+
+---
+
+Question:
+What is the policy term and premium paying term?
+
+Return:
+What is the policy term and premium paying term?
+
+IMPORTANT:
+Do NOT return:
+What is the definition of policy term?
+What is the definition of premium paying term?
+
+Those two values can be retrieved from the same policy schedule.
+
+---
+
+Question:
+Compare Sandeep's Kafka and Spark experience and explain
+which one was used more for real-time processing.
 
 Return:
 What Kafka experience does Sandeep have?
@@ -31,27 +69,14 @@ What Spark experience does Sandeep have?
 How has Sandeep used Kafka for real-time processing?
 How has Sandeep used Spark for real-time processing?
 
-Rules:
+---
 
-1. Preserve the original intent.
-2. Create DISTINCT information needs.
-3. Each sub-question must be independently searchable.
-4. Do not answer the questions.
-5. Do not invent facts.
-6. Do not add unsupported information.
-7. Resolve references using conversation history when possible.
-8. Return 1 to 4 questions.
-9. Return ONLY the questions.
-10. Put each question on a separate line.
-11. Do not use numbering, bullets, explanations, or markdown.
+Question:
+What is the policy number and who is the nominee?
 
-Conversation history:
+Return:
+What is the policy number?
+Who is the nominee?
 
-{conversation_history}
-
-User question:
-
-{question}
-
-Sub-questions:
+Return ONLY the sub-questions.
 """
