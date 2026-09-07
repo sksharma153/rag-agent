@@ -79,10 +79,13 @@ class ChromeVectorStore(BaseVectorStore):
             )
         return retrieved
 
-    def list_documents(self):
+    def list_documents(self, tenant_id: str):
 
         results = self.collection.get(
-            include=["metadatas"]
+            where={
+                "tenant_id": tenant_id,
+            },
+            include=["metadatas"],
         )
 
         documents = {}
@@ -103,11 +106,14 @@ class ChromeVectorStore(BaseVectorStore):
 
         return list(documents.values())
 
-    def delete_documents(self, document_ids):
+    def delete_documents(self, document_ids, tenant_id: str):
 
         results = self.collection.get(
             where={
-                "document_id": document_ids
+                "$and": [
+                    {"tenant_id": tenant_id},
+                    {"document_id": document_ids}
+                ]
             }
         )
 

@@ -20,9 +20,9 @@ class BaseVectorStore(ABC):
         pass
 
     @abstractmethod
-    def list_documents(self):
+    def list_documents(self, tenant_id: str):
         pass
 
     @abstractmethod
-    def delete_documents(self, document_id: str):
+    def delete_documents(self, document_id: str, tenant_id: str):
         pass

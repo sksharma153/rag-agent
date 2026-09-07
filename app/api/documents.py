@@ -72,13 +72,15 @@ def upload_document(
         file.file.close()
 
 @router.get("")
-def list_documents():
-    return vectorstore.list_documents()
+def list_documents(
+        tenant_id: str = Depends(get_current_tenant),
+):
+    return vectorstore.list_documents(tenant_id=tenant_id)
 
 @router.delete("/{document_id}")
-def delete_document(document_id: str):
+def delete_document(document_id: str, tenant_id: str = Depends(get_current_tenant)):
 
-    deleted_count = vectorstore.delete_documents(document_id)
+    deleted_count = vectorstore.delete_documents(document_id, tenant_id)
 
     if deleted_count == 0:
         raise HTTPException(
