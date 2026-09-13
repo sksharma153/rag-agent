@@ -1,0 +1,41 @@
+environment = "dev"
+
+project_id = "sab-dev-dap-common-4288"
+
+source_table = "sab-dev-dap-lakehouse-1470.dw_order.order_history"
+
+feature_table = "sab-dev-dap-lakehouse-1470.data_quality.dq_feature"
+
+complete_feature_table = "sab-dev-dap-lakehouse-1470.data_quality.dq_feature_complete"
+
+ml_feature_table = "sab-dev-dap-lakehouse-1470.data_quality.dq_ml_features"
+
+anomaly_table = "sab-dev-dap-lakehouse-1470.data_quality.dq_anomaly_results"
+
+partition_column = "event_ts"
+
+timestamp_column = "metric_timestamp"
+
+model_path = "models/isolation_forest_model.joblib"
+
+model_gcs_path = "data-quality/models/dev/isolation_forest_model.joblib"
+
+n_estimators = 300
+
+contamination = "auto"
+
+random_state = 42
+
+max_samples = "auto"
+
+n_jobs = -1
+
+lookback_hours = 24
+
+training_cutoff_timestamp = "2026-08-21 00:00:00 UTC"
+
+z_score_threshold = 3.0
+
+null_rate_threshold = 0.0
+
+duplicate_rate_threshold = 0.0
