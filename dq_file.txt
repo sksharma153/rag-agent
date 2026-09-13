@@ -1,41 +1,83 @@
-environment = "dev"
+variable "environment" {
+  type = string
+}
 
-project_id = "sab-dev-dap-common-4288"
+variable "project_id" {
+  type = string
+}
 
-source_table = "sab-dev-dap-lakehouse-1470.dw_order.order_history"
+variable "source_table" {
+  type = string
+}
 
-feature_table = "sab-dev-dap-lakehouse-1470.data_quality.dq_feature"
+variable "feature_table" {
+  type = string
+}
 
-complete_feature_table = "sab-dev-dap-lakehouse-1470.data_quality.dq_feature_complete"
+variable "complete_feature_table" {
+  type = string
+}
 
-ml_feature_table = "sab-dev-dap-lakehouse-1470.data_quality.dq_ml_features"
+variable "ml_feature_table" {
+  type = string
+}
 
-anomaly_table = "sab-dev-dap-lakehouse-1470.data_quality.dq_anomaly_results"
+variable "anomaly_table" {
+  type = string
+}
 
-partition_column = "event_ts"
+variable "partition_column" {
+  type = string
+}
 
-timestamp_column = "metric_timestamp"
+variable "timestamp_column" {
+  type = string
+}
 
-model_path = "models/isolation_forest_model.joblib"
+variable "model_path" {
+  type = string
+}
 
-model_gcs_path = "data-quality/models/dev/isolation_forest_model.joblib"
+variable "model_gcs_path" {
+  type = string
+}
 
-n_estimators = 300
+variable "n_estimators" {
+  type = number
+}
 
-contamination = "auto"
+variable "contamination" {
+  type = string
+}
 
-random_state = 42
+variable "random_state" {
+  type = number
+}
 
-max_samples = "auto"
+variable "max_samples" {
+  type = string
+}
 
-n_jobs = -1
+variable "n_jobs" {
+  type = number
+}
 
-lookback_hours = 24
+variable "lookback_hours" {
+  type = number
+}
 
-training_cutoff_timestamp = "2026-08-21 00:00:00 UTC"
+variable "training_cutoff_timestamp" {
+  type = string
+}
 
-z_score_threshold = 3.0
+variable "z_score_threshold" {
+  type = number
+}
 
-null_rate_threshold = 0.0
+variable "null_rate_threshold" {
+  type = number
+}
 
-duplicate_rate_threshold = 0.0
+variable "duplicate_rate_threshold" {
+  type = number
+}
