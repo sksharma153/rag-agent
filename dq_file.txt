@@ -1,83 +1,402 @@
-variable "environment" {
-  type = string
-}
+import ast
+import re
+import shutil
+import sys
+import zipfile
+from pathlib import Path
 
-variable "project_id" {
-  type = string
-}
 
-variable "source_table" {
-  type = string
-}
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
-variable "feature_table" {
-  type = string
-}
+TERRAFORM_ENV_DIR = (
+    PROJECT_ROOT
+    / "terraform"
+    / "environments"
+)
 
-variable "complete_feature_table" {
-  type = string
-}
+TEMPLATE_DIR = (
+    PROJECT_ROOT
+    / "dags"
+    / "templates"
+)
 
-variable "ml_feature_table" {
-  type = string
-}
+GENERATED_DIR = (
+    PROJECT_ROOT
+    / "dags"
+    / "generated"
+)
 
-variable "anomaly_table" {
-  type = string
-}
+DIST_DIR = (
+    PROJECT_ROOT
+    / "dist"
+)
 
-variable "partition_column" {
-  type = string
-}
+SRC_DIR = PROJECT_ROOT / "src"
+SQL_DIR = PROJECT_ROOT / "sql"
 
-variable "timestamp_column" {
-  type = string
-}
 
-variable "model_path" {
-  type = string
-}
+def parse_tfvars(path: Path):
+    """
+    Parse simple Terraform tfvars containing
+    scalar string/number/bool values.
+    """
 
-variable "model_gcs_path" {
-  type = string
-}
+    values = {}
 
-variable "n_estimators" {
-  type = number
-}
+    for line_number, raw_line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(),
+        start=1,
+    ):
+        line = raw_line.strip()
 
-variable "contamination" {
-  type = string
-}
+        if not line:
+            continue
 
-variable "random_state" {
-  type = number
-}
+        if line.startswith("#"):
+            continue
 
-variable "max_samples" {
-  type = string
-}
+        if "=" not in line:
+            continue
 
-variable "n_jobs" {
-  type = number
-}
+        key, value = line.split("=", 1)
 
-variable "lookback_hours" {
-  type = number
-}
+        key = key.strip()
+        value = value.strip()
 
-variable "training_cutoff_timestamp" {
-  type = string
-}
+        try:
+            values[key] = ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            raise ValueError(
+                f"Unable to parse {path}:{line_number}: "
+                f"{raw_line}"
+            )
 
-variable "z_score_threshold" {
-  type = number
-}
+    return values
 
-variable "null_rate_threshold" {
-  type = number
-}
 
-variable "duplicate_rate_threshold" {
-  type = number
-}
+def validate_config(config):
+    required = [
+        "environment",
+        "project_id",
+        "source_table",
+        "feature_table",
+        "complete_feature_table",
+        "ml_feature_table",
+        "anomaly_table",
+        "partition_column",
+        "timestamp_column",
+        "model_path",
+        "model_gcs_path",
+        "n_estimators",
+        "contamination",
+        "random_state",
+        "max_samples",
+        "n_jobs",
+        "lookback_hours",
+        "training_cutoff_timestamp",
+        "z_score_threshold",
+        "null_rate_threshold",
+        "duplicate_rate_threshold",
+    ]
+
+    missing = [
+        key
+        for key in required
+        if key not in config
+    ]
+
+    if missing:
+        raise ValueError(
+            "Missing tfvars values: "
+            + ", ".join(missing)
+        )
+
+
+def build_runtime_config(
+    values,
+    model_bucket,
+):
+    return {
+        "gcp": {
+            "project_id": values["project_id"],
+        },
+        "bigquery": {
+            "source_table": values["source_table"],
+            "feature_table": values["feature_table"],
+            "complete_feature_table": (
+                values["complete_feature_table"]
+            ),
+            "ml_feature_table": (
+                values["ml_feature_table"]
+            ),
+            "anomaly_table": (
+                values["anomaly_table"]
+            ),
+            "partition_column": (
+                values["partition_column"]
+            ),
+            "timestamp_column": (
+                values["timestamp_column"]
+            ),
+        },
+        "model": {
+            "path": values["model_path"],
+            "local_path": (
+                "/tmp/isolation_forest_model.joblib"
+            ),
+            "gcs_bucket": model_bucket,
+            "gcs_path": values["model_gcs_path"],
+            "n_estimators": values["n_estimators"],
+            "contamination": values["contamination"],
+            "random_state": values["random_state"],
+            "max_samples": values["max_samples"],
+            "n_jobs": values["n_jobs"],
+        },
+        "training": {
+            "cutoff_timestamp": (
+                values["training_cutoff_timestamp"]
+            ),
+        },
+        "prediction": {
+            "lookback_hours": (
+                values["lookback_hours"]
+            ),
+        },
+        "anomaly": {
+            "z_score_threshold": (
+                values["z_score_threshold"]
+            ),
+            "null_rate_threshold": (
+                values["null_rate_threshold"]
+            ),
+            "duplicate_rate_threshold": (
+                values["duplicate_rate_threshold"]
+            ),
+        },
+    }
+
+
+def render_template(
+    template_path,
+    output_path,
+    environment,
+    config,
+):
+    template = template_path.read_text(
+        encoding="utf-8"
+    )
+
+    template = template.replace(
+        "{{ ENVIRONMENT }}",
+        environment,
+    )
+
+    template = template.replace(
+        "{{ CONFIG }}",
+        repr(config),
+    )
+
+    output_path.write_text(
+        template,
+        encoding="utf-8",
+    )
+
+
+def copy_directory(
+    source,
+    destination,
+):
+    if destination.exists():
+        shutil.rmtree(destination)
+
+    shutil.copytree(
+        source,
+        destination,
+    )
+
+
+def create_zip(
+    zip_path,
+    environment,
+):
+    with zipfile.ZipFile(
+        zip_path,
+        "w",
+        zipfile.ZIP_DEFLATED,
+    ) as zip_file:
+
+        files_to_add = [
+            GENERATED_DIR
+            / f"dq_train_dag_{environment}.py",
+
+            GENERATED_DIR
+            / f"dq_predict_dag_{environment}.py",
+        ]
+
+        for file_path in files_to_add:
+            zip_file.write(
+                file_path,
+                file_path.name,
+            )
+
+        for root_dir in [
+            GENERATED_DIR / "src",
+            GENERATED_DIR / "sql",
+        ]:
+            for file_path in root_dir.rglob("*"):
+                if file_path.is_file():
+                    relative_path = (
+                        file_path.relative_to(
+                            GENERATED_DIR
+                        )
+                    )
+
+                    zip_file.write(
+                        file_path,
+                        str(relative_path),
+                    )
+
+
+def main():
+    if len(sys.argv) != 2:
+        print(
+            "Usage:\n"
+            "  python scripts/build_zip.py dev\n"
+            "  python scripts/build_zip.py cert\n"
+            "  python scripts/build_zip.py prod\n"
+        )
+        sys.exit(1)
+
+    environment = sys.argv[1]
+
+    if environment.endswith(".tfvars"):
+        environment = (
+            Path(environment).stem
+        )
+
+    tfvars_path = (
+        TERRAFORM_ENV_DIR
+        / f"{environment}.tfvars"
+    )
+
+    if not tfvars_path.exists():
+        raise FileNotFoundError(
+            f"Environment file not found: "
+            f"{tfvars_path}"
+        )
+
+    print(
+        f"Loading environment: {environment}"
+    )
+
+    values = parse_tfvars(
+        tfvars_path
+    )
+
+    validate_config(values)
+
+    if values["environment"] != environment:
+        raise ValueError(
+            f"Environment mismatch. "
+            f"Filename says '{environment}' but "
+            f"tfvars says '{values['environment']}'."
+        )
+
+    # Set this before building.
+    model_bucket = (
+        values.get(
+            "model_bucket",
+            "REPLACE_WITH_YOUR_MODEL_BUCKET",
+        )
+    )
+
+    config = build_runtime_config(
+        values=values,
+        model_bucket=model_bucket,
+    )
+
+    if model_bucket.startswith("REPLACE_"):
+        print(
+            "\nWARNING: model_bucket is not configured."
+        )
+        print(
+            "Add model_bucket to your tfvars before "
+            "deploying to Composer.\n"
+        )
+
+    # Clean generated directory.
+    if GENERATED_DIR.exists():
+        shutil.rmtree(
+            GENERATED_DIR
+        )
+
+    GENERATED_DIR.mkdir(
+        parents=True
+    )
+
+    # Render DAGs.
+    render_template(
+        TEMPLATE_DIR
+        / "dq_train_dag.py.template",
+        GENERATED_DIR
+        / f"dq_train_dag_{environment}.py",
+        environment,
+        config,
+    )
+
+    render_template(
+        TEMPLATE_DIR
+        / "dq_predict_dag.py.template",
+        GENERATED_DIR
+        / f"dq_predict_dag_{environment}.py",
+        environment,
+        config,
+    )
+
+    # Copy application code.
+    copy_directory(
+        SRC_DIR,
+        GENERATED_DIR / "src",
+    )
+
+    # Copy SQL.
+    copy_directory(
+        SQL_DIR,
+        GENERATED_DIR / "sql",
+    )
+
+    DIST_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    zip_path = (
+        DIST_DIR
+        / f"dq_project_{environment}.zip"
+    )
+
+    if zip_path.exists():
+        zip_path.unlink()
+
+    create_zip(
+        zip_path=zip_path,
+        environment=environment,
+    )
+
+    print("\nBuild completed successfully.")
+    print(f"Environment : {environment}")
+    print(f"ZIP         : {zip_path}")
+
+    print("\nZIP contents:")
+
+    with zipfile.ZipFile(
+        zip_path,
+        "r",
+    ) as zip_file:
+
+        for name in zip_file.namelist():
+            print(f"  {name}")
+
+
+if __name__ == "__main__":
+    main()
