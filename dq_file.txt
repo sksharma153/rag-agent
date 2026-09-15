@@ -1,402 +1,174 @@
-import ast
-import re
-import shutil
-import sys
-import zipfile
-from pathlib import Path
+import math
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-
-TERRAFORM_ENV_DIR = (
-    PROJECT_ROOT
-    / "terraform"
-    / "environments"
-)
-
-TEMPLATE_DIR = (
-    PROJECT_ROOT
-    / "dags"
-    / "templates"
-)
-
-GENERATED_DIR = (
-    PROJECT_ROOT
-    / "dags"
-    / "generated"
-)
-
-DIST_DIR = (
-    PROJECT_ROOT
-    / "dist"
-)
-
-SRC_DIR = PROJECT_ROOT / "src"
-SQL_DIR = PROJECT_ROOT / "sql"
+def _is_valid_number(value):
+    return (
+        value is not None
+        and not (
+            isinstance(value, float)
+            and math.isnan(value)
+        )
+    )
 
 
-def parse_tfvars(path: Path):
-    """
-    Parse simple Terraform tfvars containing
-    scalar string/number/bool values.
-    """
+def explain_anomaly(
+    row,
+    z_score_threshold=3.0,
+    null_rate_threshold=0.0,
+    duplicate_rate_threshold=0.0,
+):
+    reasons = []
 
-    values = {}
+    # --------------------------------------------------
+    # NULL RATE
+    # --------------------------------------------------
 
-    for line_number, raw_line in enumerate(
-        path.read_text(encoding="utf-8").splitlines(),
-        start=1,
-    ):
-        line = raw_line.strip()
+    if "null_rate" in row.index:
 
-        if not line:
-            continue
+        null_rate = row["null_rate"]
 
-        if line.startswith("#"):
-            continue
+        if _is_valid_number(null_rate):
 
-        if "=" not in line:
-            continue
+            if null_rate > null_rate_threshold:
 
-        key, value = line.split("=", 1)
+                reasons.append(
+                    f"High NULL rate: "
+                    f"{null_rate:.2%} "
+                    f"(threshold: "
+                    f"{null_rate_threshold:.2%})"
+                )
 
-        key = key.strip()
-        value = value.strip()
+    # --------------------------------------------------
+    # DUPLICATE RATE
+    # --------------------------------------------------
 
-        try:
-            values[key] = ast.literal_eval(value)
-        except (ValueError, SyntaxError):
-            raise ValueError(
-                f"Unable to parse {path}:{line_number}: "
-                f"{raw_line}"
+    if "duplicate_rate" in row.index:
+
+        duplicate_rate = row["duplicate_rate"]
+
+        if _is_valid_number(duplicate_rate):
+
+            if duplicate_rate > duplicate_rate_threshold:
+
+                reasons.append(
+                    f"High duplicate rate: "
+                    f"{duplicate_rate:.2%} "
+                    f"(threshold: "
+                    f"{duplicate_rate_threshold:.2%})"
+                )
+
+    # --------------------------------------------------
+    # RECORD COUNT / VOLUME
+    # --------------------------------------------------
+
+    if "record_count" in row.index:
+
+        record_count = row["record_count"]
+
+        if _is_valid_number(record_count):
+
+            # If a historical/expected count exists,
+            # compare against it.
+            if (
+                "expected_record_count" in row.index
+                and _is_valid_number(
+                    row["expected_record_count"]
+                )
+            ):
+
+                expected = row[
+                    "expected_record_count"
+                ]
+
+                if record_count < expected:
+
+                    percentage = (
+                        (expected - record_count)
+                        / expected
+                        * 100
+                        if expected > 0
+                        else 0
+                    )
+
+                    reasons.append(
+                        f"Low record volume: "
+                        f"{record_count:.0f} records "
+                        f"vs expected "
+                        f"{expected:.0f} "
+                        f"({percentage:.1f}% below expected)"
+                    )
+
+    # --------------------------------------------------
+    # Z-SCORE
+    # --------------------------------------------------
+
+    if "z_score" in row.index:
+
+        z_score = row["z_score"]
+
+        if _is_valid_number(z_score):
+
+            if abs(z_score) >= z_score_threshold:
+
+                direction = (
+                    "above"
+                    if z_score > 0
+                    else "below"
+                )
+
+                reasons.append(
+                    f"Statistical outlier: "
+                    f"z-score {z_score:.2f} "
+                    f"({direction} normal range; "
+                    f"threshold ±{z_score_threshold:.2f})"
+                )
+
+    # --------------------------------------------------
+    # MISSING HOUR
+    # --------------------------------------------------
+
+    if "record_count" in row.index:
+
+        record_count = row["record_count"]
+
+        if (
+            _is_valid_number(record_count)
+            and record_count == 0
+        ):
+
+            reasons.append(
+                "Missing data: "
+                "no records received for this time window"
             )
 
-    return values
+    # --------------------------------------------------
+    # DATA COMPLETENESS
+    # --------------------------------------------------
 
+    if "completeness_rate" in row.index:
 
-def validate_config(config):
-    required = [
-        "environment",
-        "project_id",
-        "source_table",
-        "feature_table",
-        "complete_feature_table",
-        "ml_feature_table",
-        "anomaly_table",
-        "partition_column",
-        "timestamp_column",
-        "model_path",
-        "model_gcs_path",
-        "n_estimators",
-        "contamination",
-        "random_state",
-        "max_samples",
-        "n_jobs",
-        "lookback_hours",
-        "training_cutoff_timestamp",
-        "z_score_threshold",
-        "null_rate_threshold",
-        "duplicate_rate_threshold",
-    ]
-
-    missing = [
-        key
-        for key in required
-        if key not in config
-    ]
-
-    if missing:
-        raise ValueError(
-            "Missing tfvars values: "
-            + ", ".join(missing)
-        )
-
-
-def build_runtime_config(
-    values,
-    model_bucket,
-):
-    return {
-        "gcp": {
-            "project_id": values["project_id"],
-        },
-        "bigquery": {
-            "source_table": values["source_table"],
-            "feature_table": values["feature_table"],
-            "complete_feature_table": (
-                values["complete_feature_table"]
-            ),
-            "ml_feature_table": (
-                values["ml_feature_table"]
-            ),
-            "anomaly_table": (
-                values["anomaly_table"]
-            ),
-            "partition_column": (
-                values["partition_column"]
-            ),
-            "timestamp_column": (
-                values["timestamp_column"]
-            ),
-        },
-        "model": {
-            "path": values["model_path"],
-            "local_path": (
-                "/tmp/isolation_forest_model.joblib"
-            ),
-            "gcs_bucket": model_bucket,
-            "gcs_path": values["model_gcs_path"],
-            "n_estimators": values["n_estimators"],
-            "contamination": values["contamination"],
-            "random_state": values["random_state"],
-            "max_samples": values["max_samples"],
-            "n_jobs": values["n_jobs"],
-        },
-        "training": {
-            "cutoff_timestamp": (
-                values["training_cutoff_timestamp"]
-            ),
-        },
-        "prediction": {
-            "lookback_hours": (
-                values["lookback_hours"]
-            ),
-        },
-        "anomaly": {
-            "z_score_threshold": (
-                values["z_score_threshold"]
-            ),
-            "null_rate_threshold": (
-                values["null_rate_threshold"]
-            ),
-            "duplicate_rate_threshold": (
-                values["duplicate_rate_threshold"]
-            ),
-        },
-    }
-
-
-def render_template(
-    template_path,
-    output_path,
-    environment,
-    config,
-):
-    template = template_path.read_text(
-        encoding="utf-8"
-    )
-
-    template = template.replace(
-        "{{ ENVIRONMENT }}",
-        environment,
-    )
-
-    template = template.replace(
-        "{{ CONFIG }}",
-        repr(config),
-    )
-
-    output_path.write_text(
-        template,
-        encoding="utf-8",
-    )
-
-
-def copy_directory(
-    source,
-    destination,
-):
-    if destination.exists():
-        shutil.rmtree(destination)
-
-    shutil.copytree(
-        source,
-        destination,
-    )
-
-
-def create_zip(
-    zip_path,
-    environment,
-):
-    with zipfile.ZipFile(
-        zip_path,
-        "w",
-        zipfile.ZIP_DEFLATED,
-    ) as zip_file:
-
-        files_to_add = [
-            GENERATED_DIR
-            / f"dq_train_dag_{environment}.py",
-
-            GENERATED_DIR
-            / f"dq_predict_dag_{environment}.py",
+        completeness_rate = row[
+            "completeness_rate"
         ]
 
-        for file_path in files_to_add:
-            zip_file.write(
-                file_path,
-                file_path.name,
-            )
+        if _is_valid_number(completeness_rate):
 
-        for root_dir in [
-            GENERATED_DIR / "src",
-            GENERATED_DIR / "sql",
-        ]:
-            for file_path in root_dir.rglob("*"):
-                if file_path.is_file():
-                    relative_path = (
-                        file_path.relative_to(
-                            GENERATED_DIR
-                        )
-                    )
+            if completeness_rate < 1.0:
 
-                    zip_file.write(
-                        file_path,
-                        str(relative_path),
-                    )
+                reasons.append(
+                    f"Low data completeness: "
+                    f"{completeness_rate:.2%}"
+                )
 
+    # --------------------------------------------------
+    # FALLBACK
+    # --------------------------------------------------
 
-def main():
-    if len(sys.argv) != 2:
-        print(
-            "Usage:\n"
-            "  python scripts/build_zip.py dev\n"
-            "  python scripts/build_zip.py cert\n"
-            "  python scripts/build_zip.py prod\n"
-        )
-        sys.exit(1)
+    if not reasons:
 
-    environment = sys.argv[1]
-
-    if environment.endswith(".tfvars"):
-        environment = (
-            Path(environment).stem
+        reasons.append(
+            "ML model detected an unusual "
+            "combination of data-quality metrics"
         )
 
-    tfvars_path = (
-        TERRAFORM_ENV_DIR
-        / f"{environment}.tfvars"
-    )
-
-    if not tfvars_path.exists():
-        raise FileNotFoundError(
-            f"Environment file not found: "
-            f"{tfvars_path}"
-        )
-
-    print(
-        f"Loading environment: {environment}"
-    )
-
-    values = parse_tfvars(
-        tfvars_path
-    )
-
-    validate_config(values)
-
-    if values["environment"] != environment:
-        raise ValueError(
-            f"Environment mismatch. "
-            f"Filename says '{environment}' but "
-            f"tfvars says '{values['environment']}'."
-        )
-
-    # Set this before building.
-    model_bucket = (
-        values.get(
-            "model_bucket",
-            "REPLACE_WITH_YOUR_MODEL_BUCKET",
-        )
-    )
-
-    config = build_runtime_config(
-        values=values,
-        model_bucket=model_bucket,
-    )
-
-    if model_bucket.startswith("REPLACE_"):
-        print(
-            "\nWARNING: model_bucket is not configured."
-        )
-        print(
-            "Add model_bucket to your tfvars before "
-            "deploying to Composer.\n"
-        )
-
-    # Clean generated directory.
-    if GENERATED_DIR.exists():
-        shutil.rmtree(
-            GENERATED_DIR
-        )
-
-    GENERATED_DIR.mkdir(
-        parents=True
-    )
-
-    # Render DAGs.
-    render_template(
-        TEMPLATE_DIR
-        / "dq_train_dag.py.template",
-        GENERATED_DIR
-        / f"dq_train_dag_{environment}.py",
-        environment,
-        config,
-    )
-
-    render_template(
-        TEMPLATE_DIR
-        / "dq_predict_dag.py.template",
-        GENERATED_DIR
-        / f"dq_predict_dag_{environment}.py",
-        environment,
-        config,
-    )
-
-    # Copy application code.
-    copy_directory(
-        SRC_DIR,
-        GENERATED_DIR / "src",
-    )
-
-    # Copy SQL.
-    copy_directory(
-        SQL_DIR,
-        GENERATED_DIR / "sql",
-    )
-
-    DIST_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    zip_path = (
-        DIST_DIR
-        / f"dq_project_{environment}.zip"
-    )
-
-    if zip_path.exists():
-        zip_path.unlink()
-
-    create_zip(
-        zip_path=zip_path,
-        environment=environment,
-    )
-
-    print("\nBuild completed successfully.")
-    print(f"Environment : {environment}")
-    print(f"ZIP         : {zip_path}")
-
-    print("\nZIP contents:")
-
-    with zipfile.ZipFile(
-        zip_path,
-        "r",
-    ) as zip_file:
-
-        for name in zip_file.namelist():
-            print(f"  {name}")
-
-
-if __name__ == "__main__":
-    main()
+    return reasons
