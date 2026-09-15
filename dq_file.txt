@@ -1,14 +1,18 @@
 import math
 
 
-def _is_valid_number(value):
-    return (
-        value is not None
-        and not (
-            isinstance(value, float)
-            and math.isnan(value)
-        )
-    )
+def is_valid_number(value):
+    if value is None:
+        return False
+
+    try:
+        return not math.isnan(float(value))
+    except (TypeError, ValueError):
+        return False
+
+
+def format_percentage(value):
+    return f"{float(value) * 100:.2f}%"
 
 
 def explain_anomaly(
@@ -19,156 +23,264 @@ def explain_anomaly(
 ):
     reasons = []
 
-    # --------------------------------------------------
-    # NULL RATE
-    # --------------------------------------------------
+    # ============================================================
+    # 1. MISSING HOUR
+    # ============================================================
 
-    if "null_rate" in row.index:
+    if "is_missing_hour" in row.index:
 
-        null_rate = row["null_rate"]
+        value = row["is_missing_hour"]
 
-        if _is_valid_number(null_rate):
-
-            if null_rate > null_rate_threshold:
-
-                reasons.append(
-                    f"High NULL rate: "
-                    f"{null_rate:.2%} "
-                    f"(threshold: "
-                    f"{null_rate_threshold:.2%})"
-                )
-
-    # --------------------------------------------------
-    # DUPLICATE RATE
-    # --------------------------------------------------
-
-    if "duplicate_rate" in row.index:
-
-        duplicate_rate = row["duplicate_rate"]
-
-        if _is_valid_number(duplicate_rate):
-
-            if duplicate_rate > duplicate_rate_threshold:
-
-                reasons.append(
-                    f"High duplicate rate: "
-                    f"{duplicate_rate:.2%} "
-                    f"(threshold: "
-                    f"{duplicate_rate_threshold:.2%})"
-                )
-
-    # --------------------------------------------------
-    # RECORD COUNT / VOLUME
-    # --------------------------------------------------
-
-    if "record_count" in row.index:
-
-        record_count = row["record_count"]
-
-        if _is_valid_number(record_count):
-
-            # If a historical/expected count exists,
-            # compare against it.
-            if (
-                "expected_record_count" in row.index
-                and _is_valid_number(
-                    row["expected_record_count"]
-                )
-            ):
-
-                expected = row[
-                    "expected_record_count"
-                ]
-
-                if record_count < expected:
-
-                    percentage = (
-                        (expected - record_count)
-                        / expected
-                        * 100
-                        if expected > 0
-                        else 0
-                    )
-
-                    reasons.append(
-                        f"Low record volume: "
-                        f"{record_count:.0f} records "
-                        f"vs expected "
-                        f"{expected:.0f} "
-                        f"({percentage:.1f}% below expected)"
-                    )
-
-    # --------------------------------------------------
-    # Z-SCORE
-    # --------------------------------------------------
-
-    if "z_score" in row.index:
-
-        z_score = row["z_score"]
-
-        if _is_valid_number(z_score):
-
-            if abs(z_score) >= z_score_threshold:
-
-                direction = (
-                    "above"
-                    if z_score > 0
-                    else "below"
-                )
-
-                reasons.append(
-                    f"Statistical outlier: "
-                    f"z-score {z_score:.2f} "
-                    f"({direction} normal range; "
-                    f"threshold ±{z_score_threshold:.2f})"
-                )
-
-    # --------------------------------------------------
-    # MISSING HOUR
-    # --------------------------------------------------
-
-    if "record_count" in row.index:
-
-        record_count = row["record_count"]
-
-        if (
-            _is_valid_number(record_count)
-            and record_count == 0
-        ):
+        if value in [True, 1, "true", "True"]:
 
             reasons.append(
-                "Missing data: "
-                "no records received for this time window"
+                "Missing hourly data: no data was received "
+                "for the expected hour"
             )
 
-    # --------------------------------------------------
-    # DATA COMPLETENESS
-    # --------------------------------------------------
+    # ============================================================
+    # 2. Z-SCORE BASED ANOMALIES
+    # ============================================================
 
-    if "completeness_rate" in row.index:
+    zscore_columns = [
+        column
+        for column in row.index
+        if column.endswith("_zscore")
+    ]
 
-        completeness_rate = row[
-            "completeness_rate"
+    zscore_anomalies = []
+
+    for column in zscore_columns:
+
+        value = row[column]
+
+        if not is_valid_number(value):
+            continue
+
+        value = float(value)
+
+        if abs(value) >= z_score_threshold:
+
+            zscore_anomalies.append(
+                (column, value)
+            )
+
+    # Sort strongest statistical deviations first
+
+    zscore_anomalies.sort(
+        key=lambda x: abs(x[1]),
+        reverse=True,
+    )
+
+    for column, value in zscore_anomalies[:5]:
+
+        metric_name = (
+            column
+            .replace("_zscore", "")
+            .replace("_", " ")
+            .title()
+        )
+
+        direction = (
+            "higher"
+            if value > 0
+            else "lower"
+        )
+
+        reasons.append(
+            f"Statistical outlier: {metric_name} "
+            f"is {direction} than normal "
+            f"(z-score: {value:.2f}, "
+            f"threshold: ±{z_score_threshold:.2f})"
+        )
+
+    # ============================================================
+    # 3. NULL RATIOS
+    # ============================================================
+
+    null_ratio_columns = [
+        column
+        for column in row.index
+        if column.endswith("_null_ratio")
+    ]
+
+    for column in null_ratio_columns:
+
+        value = row[column]
+
+        if not is_valid_number(value):
+            continue
+
+        value = float(value)
+
+        if value > null_rate_threshold:
+
+            field_name = (
+                column
+                .replace("_null_ratio", "")
+                .replace("_", " ")
+                .title()
+            )
+
+            reasons.append(
+                f"NULL values detected in "
+                f"{field_name} fields: "
+                f"{format_percentage(value)}"
+            )
+
+    # ============================================================
+    # 4. CONDITIONAL VIOLATION
+    # ============================================================
+
+    if "conditional_violation_ratio" in row.index:
+
+        value = row[
+            "conditional_violation_ratio"
         ]
 
-        if _is_valid_number(completeness_rate):
+        if is_valid_number(value):
 
-            if completeness_rate < 1.0:
+            value = float(value)
+
+            if value > 0:
 
                 reasons.append(
-                    f"Low data completeness: "
-                    f"{completeness_rate:.2%}"
+                    f"Conditional data-quality violations: "
+                    f"{format_percentage(value)} of records"
                 )
 
-    # --------------------------------------------------
-    # FALLBACK
-    # --------------------------------------------------
+    # ============================================================
+    # 5. BUSINESS / DATA QUALITY FLAGS
+    # ============================================================
+
+    flag_messages = {
+
+        "flag_missing_all_items":
+            "Missing all order items",
+
+        "flag_missing_all_passengers":
+            "Missing all passenger information",
+
+        "flag_missing_all_services":
+            "Missing all service information",
+
+        "flag_cancelled_missing_reason":
+            "Cancelled order is missing cancellation reason",
+
+        "flag_item_amt_without_ccy":
+            "Item amount exists without currency",
+
+        "flag_item_base_amt_without_ccy":
+            "Item base amount exists without currency",
+
+        "flag_active_svc_missing_ticket":
+            "Active service is missing ticket information",
+
+        "flag_flight_missing_times":
+            "Flight is missing required timing information",
+
+        "flag_flight_missing_legs":
+            "Flight is missing required leg information",
+
+        "flag_pay_amt_without_ccy":
+            "Payment amount exists without currency",
+    }
+
+    for column, message in flag_messages.items():
+
+        if column not in row.index:
+            continue
+
+        value = row[column]
+
+        if value in [True, 1, "true", "True"]:
+
+            reasons.append(
+                f"Data-quality rule violation: "
+                f"{message}"
+            )
+
+    # ============================================================
+    # 6. VOLUME RELATED ANOMALIES
+    # ============================================================
+
+    volume_columns = [
+        "row_count_score",
+        "event_count_zscore",
+        "active_pax_zscore",
+        "order_total_zscore",
+    ]
+
+    for column in volume_columns:
+
+        if column not in row.index:
+            continue
+
+        value = row[column]
+
+        if not is_valid_number(value):
+            continue
+
+        value = float(value)
+
+        if abs(value) >= z_score_threshold:
+
+            metric_name = (
+                column
+                .replace("_zscore", "")
+                .replace("_score", "")
+                .replace("_", " ")
+                .title()
+            )
+
+            direction = (
+                "higher"
+                if value > 0
+                else "lower"
+            )
+
+            reasons.append(
+                f"Volume anomaly: {metric_name} "
+                f"is {direction} than expected "
+                f"(score: {value:.2f})"
+            )
+
+    # ============================================================
+    # 7. REMOVE DUPLICATE EXPLANATIONS
+    # ============================================================
+
+    unique_reasons = []
+
+    for reason in reasons:
+
+        if reason not in unique_reasons:
+            unique_reasons.append(reason)
+
+    reasons = unique_reasons
+
+    # ============================================================
+    # 8. FALLBACK
+    # ============================================================
 
     if not reasons:
 
-        reasons.append(
-            "ML model detected an unusual "
-            "combination of data-quality metrics"
+        anomaly_score = row.get(
+            "anomaly_score"
         )
+
+        if is_valid_number(anomaly_score):
+
+            reasons.append(
+                "Isolation Forest detected an unusual "
+                "combination of data-quality features "
+                f"(anomaly score: {float(anomaly_score):.4f})"
+            )
+
+        else:
+
+            reasons.append(
+                "Isolation Forest detected an unusual "
+                "combination of data-quality features"
+            )
 
     return reasons
